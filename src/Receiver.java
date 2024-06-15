@@ -26,12 +26,10 @@ public class Receiver {
 
                 ByteArrayInputStream byteStream = new ByteArrayInputStream(buffer);
                 ObjectInputStream objectStream = new ObjectInputStream(byteStream);
-                List<UserMessage> userList = (List<UserMessage>) objectStream.readObject();
+                UserMessage receivedMessage = (UserMessage) objectStream.readObject();
 
-                System.out.println("Mensaje recibido:");
-                for (UserMessage userMessage : userList) {
-                    System.out.println(userMessage);
-                }
+                System.out.println("Mensaje recibido de " + receivedMessage.getUsuario() + ": " + receivedMessage.getMensaje());
+                System.out.println("Nodos conectados: " + receivedMessage.getConnectedNodes());
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
