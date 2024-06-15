@@ -1,66 +1,81 @@
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.util.Scanner;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
 public class Sender {
     private DatagramSocket socket;
+    private List<UserMessage> userList;
 
     public Sender() {
         try {
             this.socket = new DatagramSocket();
+            this.userList = new ArrayList<>();
         } catch (IOException e) {
             e.printStackTrace();
+            System.exit(1);
         }
     }
 
-    @SuppressWarnings("resource")
     public void startChat() throws IOException {
-        Scanner console = new Scanner(System.in);
+        try (Scanner console = new Scanner(System.in)) {
+            System.out.print("Ingrese su nombre de usuario: ");
+            String usuario = console.nextLine();
+            System.out.print("Ingrese su clave: ");
+            String clave = console.nextLine();
 
-        System.out.print("Ingrese su nombre de usuario: ");
-        String usuario = console.nextLine();
-        System.out.print("Ingrese su clave: ");
-        String clave = console.nextLine();
+            if (!autenticar(usuario, clave)) {
+                System.out.println("Autenticación fallida. Saliendo...");
+                return;
+            }
 
-        // Simulación de autenticación (comparación con datos en archivo)
-        if (!autenticar(usuario, clave)) {
-            System.out.println("Autenticación fallida. Saliendo...");
-            return;
-        }
+            userList.add(new UserMessage(usuario, "se ha unido al chat"));
 
-        while (true) {
-            System.out.print("Ingresar mensaje: ");
-            String message = console.nextLine();
+            while (true) {
+                System.out.print("Ingresar mensaje: ");
+                String message = console.nextLine();
+                UserMessage userMessage = new UserMessage(usuario, message);
+                userList.add(userMessage);
 
-            // Send message to the chat
-            sendMessage(usuario, message);
+                sendMessage(userList);
 
-            // Exit condition if "salir" is typed
-            if (message.equalsIgnoreCase("salir")) {
-                break;
+                if (message.equalsIgnoreCase("salir")) {
+                    break;
+                }
+            }
+        } finally {
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
             }
         }
-
-        console.close();
-        socket.close();
     }
 
     private boolean autenticar(String usuario, String clave) {
-        // Aquí deberías implementar la lógica de autenticación.
-        // En este ejemplo, se acepta cualquier usuario y clave.
-        return true;
+        try (BufferedReader br = new BufferedReader(new FileReader("usuarios.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length == 2 && parts[0].equals(usuario) && parts[1].equals(clave)) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
-    private void sendMessage(String usuario, String message) {
+    private void sendMessage(List<UserMessage> userList) {
         try {
-            String fullMessage = usuario + ": " + message;
-            byte[] buffer = fullMessage.getBytes();
-            InetAddress group = InetAddress.getByName("localhost"); // Multicast group address
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
+            objectStream.writeObject(userList);
+            objectStream.flush();
+
+            byte[] buffer = byteStream.toByteArray();
+            InetAddress group = InetAddress.getByName("localhost");
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group, Receiver.PORT);
             socket.send(packet);
-            System.out.println("Mensaje enviado: " + message);
+            System.out.println("Mensaje enviado: " + userList.get(userList.size() - 1));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -71,3 +86,4 @@ public class Sender {
         sender.startChat();
     }
 }
+

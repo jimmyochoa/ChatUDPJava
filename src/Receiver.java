@@ -1,10 +1,8 @@
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
 public class Receiver {
-
     public static final int PORT = 2020;
     private DatagramSocket socket;
 
@@ -13,6 +11,7 @@ public class Receiver {
             this.socket = new DatagramSocket(PORT);
         } catch (IOException e) {
             e.printStackTrace();
+            System.exit(1);
         }
     }
 
@@ -21,18 +20,23 @@ public class Receiver {
             System.out.println("Receiver is working...");
 
             while (true) {
-                // Receive message
-                byte[] buffer = new byte[1500];
+                byte[] buffer = new byte[4096];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
 
-                String receivedMessage = new String(buffer, 0, packet.getLength());
-                System.out.println("Mensaje recibido: " + receivedMessage);
+                ByteArrayInputStream byteStream = new ByteArrayInputStream(buffer);
+                ObjectInputStream objectStream = new ObjectInputStream(byteStream);
+                List<UserMessage> userList = (List<UserMessage>) objectStream.readObject();
+
+                System.out.println("Mensaje recibido:");
+                for (UserMessage userMessage : userList) {
+                    System.out.println(userMessage);
+                }
             }
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         } finally {
-            if (socket != null) {
+            if (socket != null && !socket.isClosed()) {
                 socket.close();
             }
         }
