@@ -39,6 +39,8 @@ public class Sender {
 
                 if (message.equalsIgnoreCase("salir")) {
                     connectedNodes.remove(usuario);
+                    userMessage = new UserMessage(usuario, "User has left the chat", new ArrayList<>(connectedNodes));
+                    sendMessage(userMessage);
                     break;
                 }
             }
