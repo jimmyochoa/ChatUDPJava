@@ -4,12 +4,12 @@ import java.util.*;
 
 public class Sender {
     private DatagramSocket socket;
-    private List<UserMessage> userList;
+    private List<String> connectedNodes;
 
     public Sender() {
         try {
             this.socket = new DatagramSocket();
-            this.userList = new ArrayList<>();
+            this.connectedNodes = new ArrayList<>();
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
@@ -28,17 +28,17 @@ public class Sender {
                 return;
             }
 
-            userList.add(new UserMessage(usuario, "se ha unido al chat"));
+            connectedNodes.add(usuario);
 
             while (true) {
                 System.out.print("Ingresar mensaje: ");
                 String message = console.nextLine();
-                UserMessage userMessage = new UserMessage(usuario, message);
-                userList.add(userMessage);
+                UserMessage userMessage = new UserMessage(usuario, message, new ArrayList<>(connectedNodes));
 
-                sendMessage(userList);
+                sendMessage(userMessage);
 
                 if (message.equalsIgnoreCase("salir")) {
+                    connectedNodes.remove(usuario);
                     break;
                 }
             }
@@ -64,18 +64,18 @@ public class Sender {
         return false;
     }
 
-    private void sendMessage(List<UserMessage> userList) {
+    private void sendMessage(UserMessage userMessage) {
         try {
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
             ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
-            objectStream.writeObject(userList);
+            objectStream.writeObject(userMessage);
             objectStream.flush();
 
             byte[] buffer = byteStream.toByteArray();
             InetAddress group = InetAddress.getByName("localhost");
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group, Receiver.PORT);
             socket.send(packet);
-            System.out.println("Mensaje enviado: " + userList.get(userList.size() - 1));
+            System.out.println("Mensaje enviado: " + userMessage);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -86,4 +86,3 @@ public class Sender {
         sender.startChat();
     }
 }
-

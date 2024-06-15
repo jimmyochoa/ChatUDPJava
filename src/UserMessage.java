@@ -1,12 +1,15 @@
 import java.io.Serializable;
+import java.util.List;
 
 public class UserMessage implements Serializable {
     private String usuario;
     private String mensaje;
+    private List<String> connectedNodes;
 
-    public UserMessage(String usuario, String mensaje) {
+    public UserMessage(String usuario, String mensaje, List<String> connectedNodes) {
         this.usuario = usuario;
         this.mensaje = mensaje;
+        this.connectedNodes = connectedNodes;
     }
 
     public String getUsuario() {
@@ -15,6 +18,10 @@ public class UserMessage implements Serializable {
 
     public String getMensaje() {
         return mensaje;
+    }
+
+    public List<String> getConnectedNodes() {
+        return connectedNodes;
     }
 
     @Override
